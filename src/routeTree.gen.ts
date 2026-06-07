@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as HowItWorksRouteImport } from './routes/how-it-works'
+import { Route as FaqRouteImport } from './routes/faq'
 import { Route as CalculatorRouteImport } from './routes/calculator'
 import { Route as BlogRouteImport } from './routes/blog'
 import { Route as IndexRouteImport } from './routes/index'
@@ -23,6 +24,11 @@ const PricingRoute = PricingRouteImport.update({
 const HowItWorksRoute = HowItWorksRouteImport.update({
   id: '/how-it-works',
   path: '/how-it-works',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FaqRoute = FaqRouteImport.update({
+  id: '/faq',
+  path: '/faq',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CalculatorRoute = CalculatorRouteImport.update({
@@ -45,6 +51,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/blog': typeof BlogRoute
   '/calculator': typeof CalculatorRoute
+  '/faq': typeof FaqRoute
   '/how-it-works': typeof HowItWorksRoute
   '/pricing': typeof PricingRoute
 }
@@ -52,6 +59,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/blog': typeof BlogRoute
   '/calculator': typeof CalculatorRoute
+  '/faq': typeof FaqRoute
   '/how-it-works': typeof HowItWorksRoute
   '/pricing': typeof PricingRoute
 }
@@ -60,21 +68,36 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/blog': typeof BlogRoute
   '/calculator': typeof CalculatorRoute
+  '/faq': typeof FaqRoute
   '/how-it-works': typeof HowItWorksRoute
   '/pricing': typeof PricingRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/blog' | '/calculator' | '/how-it-works' | '/pricing'
+  fullPaths:
+    | '/'
+    | '/blog'
+    | '/calculator'
+    | '/faq'
+    | '/how-it-works'
+    | '/pricing'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/blog' | '/calculator' | '/how-it-works' | '/pricing'
-  id: '__root__' | '/' | '/blog' | '/calculator' | '/how-it-works' | '/pricing'
+  to: '/' | '/blog' | '/calculator' | '/faq' | '/how-it-works' | '/pricing'
+  id:
+    | '__root__'
+    | '/'
+    | '/blog'
+    | '/calculator'
+    | '/faq'
+    | '/how-it-works'
+    | '/pricing'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   BlogRoute: typeof BlogRoute
   CalculatorRoute: typeof CalculatorRoute
+  FaqRoute: typeof FaqRoute
   HowItWorksRoute: typeof HowItWorksRoute
   PricingRoute: typeof PricingRoute
 }
@@ -93,6 +116,13 @@ declare module '@tanstack/react-router' {
       path: '/how-it-works'
       fullPath: '/how-it-works'
       preLoaderRoute: typeof HowItWorksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/faq': {
+      id: '/faq'
+      path: '/faq'
+      fullPath: '/faq'
+      preLoaderRoute: typeof FaqRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/calculator': {
@@ -123,9 +153,20 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   BlogRoute: BlogRoute,
   CalculatorRoute: CalculatorRoute,
+  FaqRoute: FaqRoute,
   HowItWorksRoute: HowItWorksRoute,
   PricingRoute: PricingRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
