@@ -14,6 +14,7 @@ import { Route as HowItWorksRouteImport } from './routes/how-it-works'
 import { Route as FaqRouteImport } from './routes/faq'
 import { Route as CalculatorRouteImport } from './routes/calculator'
 import { Route as BlogRouteImport } from './routes/blog'
+import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 
 const PricingRoute = PricingRouteImport.update({
@@ -41,6 +42,11 @@ const BlogRoute = BlogRouteImport.update({
   path: '/blog',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AboutRoute = AboutRouteImport.update({
+  id: '/about',
+  path: '/about',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -49,6 +55,7 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
   '/blog': typeof BlogRoute
   '/calculator': typeof CalculatorRoute
   '/faq': typeof FaqRoute
@@ -57,6 +64,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
   '/blog': typeof BlogRoute
   '/calculator': typeof CalculatorRoute
   '/faq': typeof FaqRoute
@@ -66,6 +74,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
   '/blog': typeof BlogRoute
   '/calculator': typeof CalculatorRoute
   '/faq': typeof FaqRoute
@@ -76,16 +85,25 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/about'
     | '/blog'
     | '/calculator'
     | '/faq'
     | '/how-it-works'
     | '/pricing'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/blog' | '/calculator' | '/faq' | '/how-it-works' | '/pricing'
+  to:
+    | '/'
+    | '/about'
+    | '/blog'
+    | '/calculator'
+    | '/faq'
+    | '/how-it-works'
+    | '/pricing'
   id:
     | '__root__'
     | '/'
+    | '/about'
     | '/blog'
     | '/calculator'
     | '/faq'
@@ -95,6 +113,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AboutRoute: typeof AboutRoute
   BlogRoute: typeof BlogRoute
   CalculatorRoute: typeof CalculatorRoute
   FaqRoute: typeof FaqRoute
@@ -139,6 +158,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BlogRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/about': {
+      id: '/about'
+      path: '/about'
+      fullPath: '/about'
+      preLoaderRoute: typeof AboutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -151,6 +177,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AboutRoute: AboutRoute,
   BlogRoute: BlogRoute,
   CalculatorRoute: CalculatorRoute,
   FaqRoute: FaqRoute,
