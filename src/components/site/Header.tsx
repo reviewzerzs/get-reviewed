@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { Menu, X, Star } from "lucide-react";
+import { Menu, X } from "lucide-react";
+import logoAsset from "@/assets/getreviewzz-logo.png.asset.json";
 
 const nav = [
   { to: "/", label: "Home" },
@@ -17,11 +18,9 @@ export function Header() {
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/90 backdrop-blur">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-        <Link to="/" className="flex items-center gap-2 font-bold text-lg text-foreground">
-          <span className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground">
-            <Star className="h-4 w-4 fill-current" />
-          </span>
-          ReviewMarket
+        <Link to="/" className="flex flex-col items-start leading-none font-bold text-lg text-foreground">
+          <span>ReviewMarket</span>
+          <img src={logoAsset.url} alt="ReviewMarket logo" className="h-6 w-auto mt-1" />
         </Link>
         <nav className="hidden lg:flex items-center gap-7">
           {nav.map((n) => (
