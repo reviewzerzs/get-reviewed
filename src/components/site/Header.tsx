@@ -1,7 +1,8 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { Menu, X } from "lucide-react";
 import logoAsset from "@/assets/getreviewzz-logo.png.asset.json";
+import { useUser, setUser } from "@/lib/auth-store";
 
 const nav = [
   { to: "/", label: "Home" },
@@ -15,12 +16,15 @@ const nav = [
 
 export function Header() {
   const [open, setOpen] = useState(false);
+  const user = useUser();
+  const navigate = useNavigate();
+  const signOut = () => { setUser(null); navigate({ to: "/" }); };
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/90 backdrop-blur">
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-        <Link to="/" className="flex flex-col items-start leading-none font-bold text-lg text-foreground">
+      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
+        <Link to="/" className="flex flex-col items-start leading-none font-bold text-base sm:text-lg text-foreground shrink-0">
           <span>ReviewMarket</span>
-          <img src={logoAsset.url} alt="ReviewMarket logo" className="h-6 w-auto mt-1" />
+          <img src={logoAsset.url} alt="ReviewMarket logo" className="h-5 sm:h-6 w-auto mt-1" />
         </Link>
         <nav className="hidden lg:flex items-center gap-7">
           {nav.map((n) => (
@@ -36,23 +40,36 @@ export function Header() {
           ))}
         </nav>
         <div className="hidden lg:flex items-center gap-3">
-          <Link to="/auth" className="text-sm font-medium text-foreground hover:text-primary">
-            Sign in
-          </Link>
-          <Link
-            to="/auth"
-            className="inline-flex h-9 items-center rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground hover:bg-primary-hover transition-colors"
-          >
-            Get Started
-          </Link>
+          {user ? (
+            <>
+              <Link to="/dashboard" className="text-sm font-medium text-foreground hover:text-primary">Dashboard</Link>
+              <button onClick={signOut} className="inline-flex h-9 items-center rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground hover:bg-primary-hover">
+                Sign out
+              </button>
+            </>
+          ) : (
+            <>
+              <Link to="/auth" className="text-sm font-medium text-foreground hover:text-primary">Sign in</Link>
+              <Link to="/auth" className="inline-flex h-9 items-center rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground hover:bg-primary-hover transition-colors">
+                Get Started
+              </Link>
+            </>
+          )}
         </div>
-        <button
-          className="lg:hidden p-2 text-foreground"
-          onClick={() => setOpen(!open)}
-          aria-label="Menu"
-        >
-          {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-        </button>
+        <div className="flex items-center gap-2 lg:hidden">
+          {user ? (
+            <Link to="/dashboard" className="inline-flex h-9 items-center rounded-md bg-primary px-3 text-xs font-semibold text-primary-foreground">
+              Dashboard
+            </Link>
+          ) : (
+            <Link to="/auth" className="inline-flex h-9 items-center rounded-md bg-primary px-3 text-xs font-semibold text-primary-foreground">
+              Get Started
+            </Link>
+          )}
+          <button className="p-2 text-foreground" onClick={() => setOpen(!open)} aria-label="Menu">
+            {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </button>
+        </div>
       </div>
       {open && (
         <div className="lg:hidden border-t border-border bg-background">
@@ -67,13 +84,25 @@ export function Header() {
                 {n.label}
               </Link>
             ))}
-            <Link
-              to="/auth"
-              onClick={() => setOpen(false)}
-              className="block px-3 py-2 mt-2 rounded-md text-sm font-semibold text-center bg-primary text-primary-foreground"
-            >
-              Get Started
-            </Link>
+            {user ? (
+              <>
+                <Link to="/dashboard" onClick={() => setOpen(false)} className="block px-3 py-2 mt-2 rounded-md text-sm font-semibold text-center bg-primary text-primary-foreground">
+                  Open dashboard
+                </Link>
+                <button onClick={() => { setOpen(false); signOut(); }} className="block w-full px-3 py-2 mt-1 rounded-md text-sm font-semibold text-center border border-border">
+                  Sign out
+                </button>
+              </>
+            ) : (
+              <>
+                <Link to="/auth" onClick={() => setOpen(false)} className="block px-3 py-2 mt-2 rounded-md text-sm font-semibold text-center border border-border text-foreground">
+                  Sign in
+                </Link>
+                <Link to="/auth" onClick={() => setOpen(false)} className="block px-3 py-2 mt-1 rounded-md text-sm font-semibold text-center bg-primary text-primary-foreground">
+                  Get Started
+                </Link>
+              </>
+            )}
           </div>
         </div>
       )}
