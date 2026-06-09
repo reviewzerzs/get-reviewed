@@ -2,6 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { ShoppingBag, PenLine, Star } from "lucide-react";
+import { setUser } from "@/lib/auth-store";
+import { useNavigate } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -18,6 +20,32 @@ export const Route = createFileRoute("/auth")({
 function Page() {
   const [mode, setMode] = useState<"signup" | "signin">("signup");
   const [role, setRole] = useState<"company" | "reviewer">("company");
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const navigate = useNavigate();
+
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    if (!email || !password) {
+      setError("Email and password are required.");
+      return;
+    }
+    if (mode === "signup" && !name.trim()) {
+      setError("Please enter your full name.");
+      return;
+    }
+    setUser({
+      name: name.trim() || email.split("@")[0],
+      email,
+      role,
+      createdAt: Date.now(),
+    });
+    navigate({ to: "/dashboard" });
+  };
+
   return (
     <SiteLayout>
       <section className="py-16 bg-section min-h-[calc(100vh-200px)]">
@@ -44,10 +72,13 @@ function Page() {
                 </button>
               </div>
             )}
-            <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
-              {mode === "signup" && <Field label="Full name" />}
-              <Field label="Email" type="email" />
-              <Field label="Password" type="password" />
+            <form className="space-y-4" onSubmit={submit}>
+              {mode === "signup" && (
+                <Field label="Full name" value={name} onChange={setName} />
+              )}
+              <Field label="Email" type="email" value={email} onChange={setEmail} />
+              <Field label="Password" type="password" value={password} onChange={setPassword} />
+              {error && <p className="text-sm text-destructive">{error}</p>}
               <button type="submit" className="w-full h-11 rounded-md bg-primary text-primary-foreground font-semibold hover:bg-primary-hover">
                 {mode === "signup" ? `Create ${role} account` : "Sign in"}
               </button>
@@ -76,11 +107,16 @@ function Page() {
   );
 }
 
-function Field({ label, type = "text" }: { label: string; type?: string }) {
+function Field({ label, type = "text", value, onChange }: { label: string; type?: string; value?: string; onChange?: (v: string) => void }) {
   return (
     <div>
       <label className="block text-sm font-semibold text-foreground mb-1.5">{label}</label>
-      <input type={type} className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20" />
+      <input
+        type={type}
+        value={value ?? ""}
+        onChange={(e) => onChange?.(e.target.value)}
+        className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+      />
     </div>
   );
 }
