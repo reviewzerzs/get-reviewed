@@ -72,7 +72,6 @@ function Page() {
                 </button>
               </div>
             )}
-            <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
             <form className="space-y-4" onSubmit={submit}>
               {mode === "signup" && (
                 <Field label="Full name" value={name} onChange={setName} />
