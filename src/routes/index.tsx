@@ -79,10 +79,22 @@ function Index() {
             <p className="mt-3 text-muted-foreground">Google, Yelp, Facebook, Trustpilot, TripAdvisor, Amazon and more.</p>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            {["Google", "Yelp", "Facebook", "Trustpilot", "TripAdvisor", "Amazon"].map((p) => (
-              <div key={p} className="rounded-lg border border-border bg-background p-5 text-center font-semibold text-foreground hover:border-primary hover:text-primary transition-colors">
-                {p}
-              </div>
+            {[
+              { name: "Google", color: "#4285F4" },
+              { name: "Yelp", color: "#D32323" },
+              { name: "Facebook", color: "#1877F2" },
+              { name: "Trustpilot", color: "#00B67A" },
+              { name: "TripAdvisor", color: "#34E0A1" },
+              { name: "Amazon", color: "#FF9900" },
+            ].map((p) => (
+              <Link
+                key={p.name}
+                to="/auth"
+                className="rounded-lg border-2 bg-background p-5 text-center font-semibold transition-all hover:shadow-md hover:-translate-y-0.5"
+                style={{ borderColor: p.color, color: p.color }}
+              >
+                {p.name}
+              </Link>
             ))}
           </div>
         </div>
