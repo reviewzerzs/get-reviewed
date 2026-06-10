@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { useUser, setUser } from "@/lib/auth-store";
 import { ShoppingBag, PenLine, Star, DollarSign, CheckCircle2, Clock, Plus, LogOut, TrendingUp } from "lucide-react";
+import { CheckoutDialog } from "@/components/site/CheckoutDialog";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({ meta: [{ title: "Dashboard — ReviewMarket" }] }),
@@ -76,12 +77,13 @@ function CompanyView() {
   const [showForm, setShowForm] = useState(false);
   const [platform, setPlatform] = useState("Google");
   const [qty, setQty] = useState(5);
+  const [checkout, setCheckout] = useState<null | { amount: number; platform: string; qty: number }>(null);
+  const user = useUser();
 
   const place = (e: React.FormEvent) => {
     e.preventDefault();
-    const id = `ORD-${1043 + orders.length}`;
-    setOrders([{ id, platform, qty, status: "Pending" }, ...orders]);
-    setShowForm(false);
+    const pricePerReview = 8;
+    setCheckout({ amount: pricePerReview * qty, platform, qty });
   };
 
   return (
@@ -131,6 +133,24 @@ function CompanyView() {
           ))}
         </div>
       </div>
+      {checkout && (
+        <CheckoutDialog
+          open={!!checkout}
+          onClose={() => setCheckout(null)}
+          input={{
+            amount: checkout.amount,
+            email: user?.email || "guest@example.com",
+            description: `${checkout.qty} ${checkout.platform} reviews`,
+            platform: checkout.platform,
+            quantity: checkout.qty,
+          }}
+          onPaid={(orderId) => {
+            setOrders([{ id: orderId.slice(0, 8).toUpperCase(), platform: checkout.platform, qty: checkout.qty, status: "In Progress" }, ...orders]);
+            setShowForm(false);
+            setCheckout(null);
+          }}
+        />
+      )}
     </div>
   );
 }
