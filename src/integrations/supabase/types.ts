@@ -14,7 +14,78 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      orders: {
+        Row: {
+          amount: number
+          created_at: string
+          crypto_asset: string | null
+          currency: string
+          customer_email: string
+          gateway: string
+          gateway_reference: string | null
+          id: string
+          metadata: Json
+          platform: string | null
+          quantity: number | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          crypto_asset?: string | null
+          currency?: string
+          customer_email: string
+          gateway: string
+          gateway_reference?: string | null
+          id?: string
+          metadata?: Json
+          platform?: string | null
+          quantity?: number | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          crypto_asset?: string | null
+          currency?: string
+          customer_email?: string
+          gateway?: string
+          gateway_reference?: string | null
+          id?: string
+          metadata?: Json
+          platform?: string | null
+          quantity?: number | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      payment_settings: {
+        Row: {
+          binance_merchant_id: string | null
+          id: number
+          paystack_public_key: string | null
+          stripe_public_key: string | null
+          updated_at: string
+        }
+        Insert: {
+          binance_merchant_id?: string | null
+          id?: number
+          paystack_public_key?: string | null
+          stripe_public_key?: string | null
+          updated_at?: string
+        }
+        Update: {
+          binance_merchant_id?: string | null
+          id?: number
+          paystack_public_key?: string | null
+          stripe_public_key?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
