@@ -108,7 +108,7 @@ function Index() {
             <PathCard
               icon={<ShoppingBag className="h-6 w-6" />}
               title="For Companies"
-              desc="Place an order, fund escrow, and approve reviews as they arrive. Boost your ratings with real, verified users."
+              desc="Place an order, pay upfront, and approve reviews as they arrive. Boost your ratings with real, verified users."
               bullets={["Multi-platform targeting", "Set tone, keywords & deadline", "Pay only for approved reviews"]}
               cta="Buy Reviews"
             />
@@ -116,7 +116,7 @@ function Index() {
               icon={<PenLine className="h-6 w-6" />}
               title="For Reviewers"
               desc="Browse open jobs, claim what fits, submit your proof and get paid. Cash out anytime."
-              bullets={["Choose jobs that match you", "Fast escrow payouts", "Build reviewer reputation"]}
+              bullets={["Choose jobs that match you", "Fast direct payouts", "Build reviewer reputation"]}
               cta="Start Earning"
               variant="dark"
             />
@@ -128,7 +128,7 @@ function Index() {
       <section className="py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 grid lg:grid-cols-3 gap-8">
           {[
-            { icon: ShieldCheck, title: "Escrow protected", desc: "Funds held safely until reviews are approved." },
+            { icon: ShieldCheck, title: "Secure payments", desc: "Card payments processed safely. Funds go straight to your account." },
             { icon: Globe, title: "Global reviewer network", desc: "Real users in 120+ countries, ready to review." },
             { icon: TrendingUp, title: "Verified quality", desc: "Every reviewer is vetted. Every submission audited." },
           ].map((f) => (
@@ -151,7 +151,7 @@ function Index() {
             {[
               { quote: "Our Google rating jumped from 3.4 to 4.7 in three months. The reviews actually convert.", name: "Sarah Chen", role: "Restaurant Owner" },
               { quote: "I earn an extra $800/month writing thoughtful reviews on weekends. Payouts are always on time.", name: "Marcus Lee", role: "Verified Reviewer" },
-              { quote: "The escrow system means we only pay for reviews we approve. Zero risk for our agency clients.", name: "Priya Patel", role: "Marketing Director" },
+              { quote: "Payments are simple and direct — no middlemen, no waiting. It just works for our agency clients.", name: "Priya Patel", role: "Marketing Director" },
             ].map((t) => (
               <div key={t.name} className="rounded-xl bg-background border border-border p-6">
                 <Quote className="h-6 w-6 text-primary mb-3" />

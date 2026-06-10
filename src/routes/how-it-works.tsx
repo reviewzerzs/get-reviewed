@@ -17,16 +17,16 @@ export const Route = createFileRoute("/how-it-works")({
 
 const companySteps = [
   { t: "Create your order", d: "Tell us your business, the platforms, number of reviews, tone, keywords, and deadline." },
-  { t: "Fund the escrow", d: "Pay upfront. Funds are held safely and only released for reviews you approve." },
+  { t: "Pay for your order", d: "Checkout with card. Payment goes directly to ReviewMarket so your campaign can launch right away." },
   { t: "Reviewers claim & deliver", d: "Verified reviewers pick your job and submit reviews with link + screenshot proof." },
-  { t: "Approve or reject", d: "Review each submission. Approved reviews release escrow. Rejected ones don't cost you." },
+  { t: "Approve or reject", d: "Review each submission. Approved reviews count toward your order. Rejected ones are replaced free of charge." },
 ];
 
 const reviewerSteps = [
   { t: "Browse paid jobs", d: "See all available review opportunities matching your profile and country." },
   { t: "Claim a job", d: "One click to claim. You get a clear brief: platform, business, tone, keywords, deadline." },
   { t: "Submit your proof", d: "Post your review, then upload the live link and a screenshot to confirm." },
-  { t: "Get paid", d: "Once the company approves, your earnings unlock from escrow. Cash out anytime." },
+  { t: "Get paid", d: "Once the company approves, earnings land in your wallet. Cash out anytime to your bank or PayPal." },
 ];
 
 function Page() {
@@ -37,7 +37,7 @@ function Page() {
       <section className="py-16 lg:py-20 bg-section border-b border-border">
         <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 text-center">
           <h1 className="text-4xl lg:text-5xl font-bold text-foreground">How ReviewMarket works</h1>
-          <p className="mt-4 text-lg text-muted-foreground">A transparent, escrow-protected process for both sides of the marketplace.</p>
+          <p className="mt-4 text-lg text-muted-foreground">A transparent, secure process for both sides of the marketplace.</p>
         </div>
       </section>
       <section className="py-14">
@@ -86,7 +86,7 @@ function Page() {
       </section>
       <section className="py-16 bg-section">
         <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 grid md:grid-cols-3 gap-6">
-          {["Escrow-protected payments", "Verified reviewers only", "Full approve/reject control"].map((b) => (
+          {["Secure direct payments", "Verified reviewers only", "Full approve/reject control"].map((b) => (
             <div key={b} className="flex items-start gap-3 rounded-lg bg-background border border-border p-5">
               <CheckCircle2 className="h-5 w-5 text-primary shrink-0 mt-0.5" />
               <span className="font-medium text-foreground">{b}</span>

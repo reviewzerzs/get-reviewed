@@ -17,13 +17,13 @@ export const Route = createFileRoute("/faq")({
 
 const faqs = [
   { q: "Are the reviews from real people?", a: "Yes. Every reviewer is verified with ID and a real account history. We never use bots or fake profiles." },
-  { q: "How does the escrow work?", a: "When you place an order, your payment is held in escrow. Funds only release to a reviewer after you approve their submission. Rejected reviews don't cost you anything." },
+  { q: "How do payments work?", a: "When you place an order, you pay upfront via secure card checkout. Payment goes directly to ReviewMarket and your campaign launches immediately. If a review is rejected, it's replaced free of charge." },
   { q: "Which platforms are supported?", a: "Google, Yelp, Facebook, Trustpilot, TripAdvisor, Amazon, G2, Capterra and several niche directories. You can target one or many in a single order." },
   { q: "How fast are reviews delivered?", a: "Standard delivery is 7 days. Priority (4 days) and Express (2 days) options are available on every package." },
   { q: "Can I specify tone, keywords or wording?", a: "Yes. You can set tone (enthusiastic, neutral, detailed), suggest keywords, and provide instructions. Reviewers write the actual copy in their own voice." },
   { q: "How do reviewers get paid?", a: "Earnings accumulate in your reviewer wallet as orders are approved. You can withdraw to PayPal, Wise or bank transfer once you reach the $25 minimum." },
   { q: "Is this allowed by Google / Yelp / Facebook?", a: "Platforms have varying policies on incentivized reviews. ReviewMarket connects you with real users sharing genuine experiences — you remain responsible for compliance with each platform's terms." },
-  { q: "Can I get a refund?", a: "You only pay for reviews you approve. Any unapproved or undelivered reviews are automatically refunded from escrow back to your wallet." },
+  { q: "Can I get a refund?", a: "If we can't deliver an approved review for your order, the unfulfilled portion is refunded back to your original payment method." },
   { q: "Do you offer white-label or API access?", a: "Yes, on the Enterprise plan. Contact sales for custom contracts and reseller terms." },
 ];
 

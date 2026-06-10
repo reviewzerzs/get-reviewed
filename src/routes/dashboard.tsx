@@ -90,7 +90,7 @@ function CompanyView() {
         <StatCard icon={ShoppingBag} label="Active orders" value={String(orders.filter(o => o.status !== "Completed").length)} />
         <StatCard icon={CheckCircle2} label="Approved reviews" value="23" />
         <StatCard icon={Star} label="Average rating" value="4.8" />
-        <StatCard icon={DollarSign} label="Escrow balance" value="$420" />
+        <StatCard icon={DollarSign} label="Account balance" value="$420" />
       </div>
 
       <div className="rounded-xl border border-border bg-background">
@@ -113,7 +113,7 @@ function CompanyView() {
               <input type="number" min={1} max={500} value={qty} onChange={(e) => setQty(Number(e.target.value))} className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm" />
             </label>
             <div className="flex items-end">
-              <button type="submit" className="w-full h-10 rounded-md bg-primary text-primary-foreground font-semibold hover:bg-primary-hover">Fund escrow & launch</button>
+              <button type="submit" className="w-full h-10 rounded-md bg-primary text-primary-foreground font-semibold hover:bg-primary-hover">Pay & launch campaign</button>
             </div>
           </form>
         )}
@@ -158,7 +158,7 @@ function ReviewerView() {
       <div className="rounded-xl border border-border bg-background">
         <div className="p-5 border-b border-border">
           <h2 className="font-semibold text-foreground">Open jobs near you</h2>
-          <p className="text-sm text-muted-foreground mt-0.5">Claim a job, submit your review, get paid from escrow.</p>
+          <p className="text-sm text-muted-foreground mt-0.5">Claim a job, submit your review, and get paid directly to your account.</p>
         </div>
         <div className="divide-y divide-border">
           {jobs.map((j) => (
