@@ -20,7 +20,7 @@ function Page() {
       <section className="py-16 lg:py-24 bg-section border-b border-border">
         <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 text-center">
           <h1 className="text-4xl lg:text-5xl font-bold text-foreground">A fairer way to do reviews</h1>
-          <p className="mt-5 text-lg text-muted-foreground">ReviewMarket was founded in 2022 to fix a broken system: businesses paying for fake bot reviews, and real users with no way to earn from honest opinions. We connect both sides, escrow every transaction, and verify every reviewer.</p>
+          <p className="mt-5 text-lg text-muted-foreground">ReviewMarket was founded in 2022 to fix a broken system: businesses paying for fake bot reviews, and real users with no way to earn from honest opinions. We connect both sides, secure every transaction, and verify every reviewer.</p>
         </div>
       </section>
       <section className="py-16">
@@ -33,7 +33,7 @@ function Page() {
           <div className="grid grid-cols-2 gap-4">
             {[
               { icon: Heart, label: "Built for honesty" },
-              { icon: ShieldCheck, label: "Escrow on every order" },
+              { icon: ShieldCheck, label: "Secure payments on every order" },
               { icon: Target, label: "Real, measurable growth" },
               { icon: Users, label: "Global verified network" },
             ].map((v) => (

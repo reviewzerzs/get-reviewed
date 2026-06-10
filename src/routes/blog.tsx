@@ -18,7 +18,7 @@ const posts = [
   { slug: "why-reviews-matter-2026", title: "Why online reviews matter more than ever in 2026", excerpt: "93% of consumers read reviews before buying. Here's how to make every one work for you.", category: "Strategy", read: "6 min" },
   { slug: "google-review-best-practices", title: "10 best practices for Google review campaigns", excerpt: "From keyword density to posting cadence — what makes a Google review actually rank.", category: "Google", read: "8 min" },
   { slug: "reviewer-earnings-guide", title: "How top reviewers earn $1,000+ per month", excerpt: "A deep look at the habits, niches and platforms that pay reviewers the most.", category: "Reviewers", read: "5 min" },
-  { slug: "escrow-explained", title: "Escrow, approvals and how we protect both sides", excerpt: "A behind-the-scenes look at the trust mechanics that keep ReviewMarket fair.", category: "Trust", read: "4 min" },
+  { slug: "payments-explained", title: "How payments and approvals protect both sides", excerpt: "A behind-the-scenes look at the trust mechanics that keep ReviewMarket fair.", category: "Trust", read: "4 min" },
   { slug: "local-seo-and-reviews", title: "The link between local SEO and review velocity", excerpt: "How often you get new reviews matters more than your average star rating.", category: "SEO", read: "7 min" },
   { slug: "writing-honest-reviews", title: "The art of writing an honest, useful review", excerpt: "What separates a review that converts from one that gets flagged or ignored.", category: "Reviewers", read: "5 min" },
 ];
