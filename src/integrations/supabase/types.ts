@@ -64,23 +64,20 @@ export type Database = {
       }
       payment_settings: {
         Row: {
-          binance_merchant_id: string | null
           id: number
-          paystack_public_key: string | null
+          ltc_wallet_address: string | null
           stripe_public_key: string | null
           updated_at: string
         }
         Insert: {
-          binance_merchant_id?: string | null
           id?: number
-          paystack_public_key?: string | null
+          ltc_wallet_address?: string | null
           stripe_public_key?: string | null
           updated_at?: string
         }
         Update: {
-          binance_merchant_id?: string | null
           id?: number
-          paystack_public_key?: string | null
+          ltc_wallet_address?: string | null
           stripe_public_key?: string | null
           updated_at?: string
         }
