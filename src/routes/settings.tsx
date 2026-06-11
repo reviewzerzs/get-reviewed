@@ -12,8 +12,7 @@ export const Route = createFileRoute("/settings")({
 
 function SettingsPage() {
   const [stripe, setStripe] = useState("");
-  const [paystack, setPaystack] = useState("");
-  const [binance, setBinance] = useState("");
+  const [ltcAddress, setLtcAddress] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -21,8 +20,7 @@ function SettingsPage() {
     supabase.from("payment_settings").select("*").eq("id", 1).maybeSingle().then(({ data }) => {
       if (data) {
         setStripe(data.stripe_public_key || "");
-        setPaystack(data.paystack_public_key || "");
-        setBinance(data.binance_merchant_id || "");
+        setLtcAddress(data.ltc_wallet_address || "");
       }
       setLoading(false);
     });
@@ -32,7 +30,7 @@ function SettingsPage() {
     e.preventDefault();
     setSaving(true);
     const { error } = await supabase.from("payment_settings").upsert({
-      id: 1, stripe_public_key: stripe, paystack_public_key: paystack, binance_merchant_id: binance,
+      id: 1, stripe_public_key: stripe, ltc_wallet_address: ltcAddress,
     });
     setSaving(false);
     if (error) toast.error(error.message); else toast.success("Settings saved");
@@ -50,8 +48,7 @@ function SettingsPage() {
         {loading ? <p className="mt-8 text-sm text-muted-foreground">Loading…</p> : (
           <form onSubmit={save} className="mt-8 space-y-5">
             <Field label="Stripe publishable key" placeholder="pk_test_..." value={stripe} onChange={setStripe} hint="Get from Stripe dashboard → Developers → API keys." />
-            <Field label="Paystack public key" placeholder="pk_test_..." value={paystack} onChange={setPaystack} hint="Paystack dashboard → Settings → API Keys & Webhooks." />
-            <Field label="Binance Pay merchant ID" placeholder="MERCHANT_..." value={binance} onChange={setBinance} hint="Binance Merchant dashboard → API Management." />
+            <Field label="Binance LTC wallet address" placeholder="ltc1q... or L... / M..." value={ltcAddress} onChange={setLtcAddress} hint="Binance app → Wallet → Deposit → Litecoin (LTC) → copy your deposit address. Shown to crypto customers at checkout." />
             <button type="submit" disabled={saving} className="inline-flex items-center gap-2 h-10 px-5 rounded-md bg-primary text-primary-foreground font-semibold hover:bg-primary/90 disabled:opacity-60">
               <Save className="h-4 w-4" /> {saving ? "Saving…" : "Save settings"}
             </button>
@@ -63,8 +60,6 @@ function SettingsPage() {
           <p className="text-muted-foreground text-xs mb-3">These must be set as edge function secrets, not entered here:</p>
           <ul className="text-xs space-y-1 text-muted-foreground">
             <li><code className="text-foreground">STRIPE_SECRET_KEY</code> — sk_test_… for the Stripe Checkout edge function</li>
-            <li><code className="text-foreground">BINANCE_PAY_API_KEY</code> — Binance Pay certificate SN</li>
-            <li><code className="text-foreground">BINANCE_PAY_API_SECRET</code> — Binance Pay API secret</li>
           </ul>
         </div>
       </section>
