@@ -1,30 +1,10 @@
 import { useEffect, useState } from "react";
-import { CreditCard, Smartphone, Bitcoin, Loader2, X, CheckCircle2 } from "lucide-react";
+import { CreditCard, Bitcoin, Loader2, X, Copy, Check, AlertCircle } from "lucide-react";
+import { QRCodeSVG } from "qrcode.react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-type Gateway = "stripe" | "paystack" | "binance";
-
-declare global {
-  interface Window { PaystackPop?: any }
-}
-
-const PAYSTACK_SCRIPT = "https://js.paystack.co/v1/inline.js";
-
-function loadPaystack(): Promise<void> {
-  return new Promise((resolve, reject) => {
-    if (typeof window === "undefined") return reject(new Error("SSR"));
-    if (window.PaystackPop) return resolve();
-    const existing = document.querySelector<HTMLScriptElement>(`script[src="${PAYSTACK_SCRIPT}"]`);
-    if (existing) { existing.addEventListener("load", () => resolve()); return; }
-    const s = document.createElement("script");
-    s.src = PAYSTACK_SCRIPT;
-    s.async = true;
-    s.onload = () => resolve();
-    s.onerror = () => reject(new Error("Failed to load Paystack"));
-    document.head.appendChild(s);
-  });
-}
+type Gateway = "stripe" | "binance";
 
 export type CheckoutInput = {
   amount: number;
@@ -35,22 +15,27 @@ export type CheckoutInput = {
   quantity?: number;
 };
 
+type CryptoOrder = {
+  orderId: string;
+  ltcAmount: string;
+  address: string;
+};
+
 export function CheckoutDialog({
   open, onClose, input, onPaid,
 }: { open: boolean; onClose: () => void; input: CheckoutInput; onPaid?: (orderId: string) => void }) {
   const [gateway, setGateway] = useState<Gateway>("stripe");
-  const [cryptoAsset, setCryptoAsset] = useState<"USDT" | "LTC">("USDT");
   const [loading, setLoading] = useState(false);
-  const [paystackKey, setPaystackKey] = useState("pk_test_paystack");
-  const [binanceQr, setBinanceQr] = useState<string | null>(null);
-  const [paid, setPaid] = useState<string | null>(null);
+  const [ltcAddress, setLtcAddress] = useState<string>("");
+  const [cryptoOrder, setCryptoOrder] = useState<CryptoOrder | null>(null);
+  const [copied, setCopied] = useState<"address" | "amount" | null>(null);
 
   useEffect(() => {
     if (!open) return;
-    setBinanceQr(null); setPaid(null);
-    supabase.from("payment_settings").select("paystack_public_key").eq("id", 1).maybeSingle()
-      .then(({ data }) => { if (data?.paystack_public_key) setPaystackKey(data.paystack_public_key); });
-    loadPaystack().catch(() => {});
+    setCryptoOrder(null);
+    setCopied(null);
+    supabase.from("payment_settings").select("ltc_wallet_address").eq("id", 1).maybeSingle()
+      .then(({ data }) => { if (data?.ltc_wallet_address) setLtcAddress(data.ltc_wallet_address); });
   }, [open]);
 
   if (!open) return null;
@@ -63,11 +48,20 @@ export function CheckoutDialog({
       gateway: g,
       platform: input.platform ?? null,
       quantity: input.quantity ?? null,
-      crypto_asset: g === "binance" ? cryptoAsset : null,
+      crypto_asset: g === "binance" ? "LTC" : null,
       metadata: { description: input.description },
     }).select("id").single();
     if (error || !data) throw new Error(error?.message || "Failed to create order");
     return data.id as string;
+  }
+
+  async function getLtcUsdPrice(): Promise<number> {
+    const res = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=litecoin&vs_currencies=usd");
+    if (!res.ok) throw new Error("Could not fetch the live LTC price. Please try again.");
+    const json = await res.json();
+    const price = json?.litecoin?.usd;
+    if (!price || price <= 0) throw new Error("Invalid LTC price received.");
+    return price;
   }
 
   async function pay() {
@@ -85,34 +79,12 @@ export function CheckoutDialog({
         });
         if (error || !data?.url) throw new Error(error?.message || data?.error || "Stripe error");
         window.location.href = data.url;
-      } else if (gateway === "paystack") {
-        await loadPaystack();
-        if (!window.PaystackPop) throw new Error("Paystack not loaded");
-        const orderId = await createOrder("paystack", "KES");
-        const amountKes = Math.round(input.amount * 130 * 100); // rough USD→KES kobo
-        const handler = window.PaystackPop.setup({
-          key: paystackKey,
-          email: input.email,
-          amount: amountKes,
-          currency: "KES",
-          ref: orderId,
-          onClose: () => { setLoading(false); },
-          callback: async (resp: any) => {
-            await supabase.from("orders").update({ status: "Paid", gateway_reference: resp.reference }).eq("id", orderId);
-            setPaid(orderId); onPaid?.(orderId);
-            toast.success("Payment successful");
-          },
-        });
-        handler.openIframe();
-        return; // keep dialog open until callback
       } else {
-        const orderId = await createOrder("binance", cryptoAsset);
-        const { data, error } = await supabase.functions.invoke("binance-checkout", {
-          body: { orderId, amount: input.amount, currency: cryptoAsset, description: input.description, email: input.email },
-        });
-        if (error || !data?.checkoutUrl) throw new Error(error?.message || data?.error || "Binance Pay error");
-        setBinanceQr(data.qrcodeLink || data.checkoutUrl);
-        window.open(data.checkoutUrl, "_blank");
+        if (!ltcAddress) throw new Error("Crypto payments aren't configured yet. The LTC wallet address is missing — add it in Developer Settings.");
+        const price = await getLtcUsdPrice();
+        const ltcAmount = (input.amount / price).toFixed(6);
+        const orderId = await createOrder("binance", "LTC");
+        setCryptoOrder({ orderId, ltcAmount, address: ltcAddress });
       }
     } catch (e: any) {
       toast.error(e.message || "Payment failed");
@@ -121,45 +93,78 @@ export function CheckoutDialog({
     }
   }
 
+  function copy(text: string, which: "address" | "amount") {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied(which);
+      setTimeout(() => setCopied(null), 2000);
+    });
+  }
+
   return (
     <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
-      <div className="bg-background rounded-xl border border-border shadow-xl max-w-md w-full p-6 relative">
+      <div className="bg-background rounded-xl border border-border shadow-xl max-w-md w-full p-6 relative max-h-[90vh] overflow-y-auto">
         <button onClick={onClose} className="absolute top-3 right-3 text-muted-foreground hover:text-foreground"><X className="h-5 w-5" /></button>
-        {paid ? (
-          <div className="text-center py-6">
-            <CheckCircle2 className="h-12 w-12 text-success mx-auto mb-3" />
-            <h3 className="text-lg font-bold">Payment received</h3>
-            <p className="text-sm text-muted-foreground mt-1">Order {paid.slice(0, 8)} marked as Paid.</p>
-            <button onClick={onClose} className="mt-4 h-10 px-4 rounded-md bg-primary text-primary-foreground font-semibold">Close</button>
-          </div>
-        ) : binanceQr ? (
-          <div className="text-center py-2">
-            <h3 className="text-lg font-bold mb-2">Scan to pay with Binance</h3>
-            <p className="text-xs text-muted-foreground mb-4">Asset: {cryptoAsset} · ${input.amount}</p>
-            <img src={binanceQr} alt="Binance Pay QR" className="mx-auto h-56 w-56 border border-border rounded-lg bg-white p-2" />
-            <p className="mt-3 text-xs text-muted-foreground">A new tab also opened with the Binance checkout. Your order will update to Paid once the payment confirms.</p>
+        {cryptoOrder ? (
+          <div className="py-2">
+            <h3 className="text-lg font-bold text-foreground text-center">Pay with Litecoin</h3>
+            <p className="text-sm text-muted-foreground text-center mt-1">
+              Send <span className="font-bold text-foreground">exactly {cryptoOrder.ltcAmount} LTC</span> to this address
+            </p>
+            <div className="mt-4 flex justify-center">
+              <div className="rounded-lg border border-border bg-white p-3">
+                <QRCodeSVG
+                  value={`litecoin:${cryptoOrder.address}?amount=${cryptoOrder.ltcAmount}&label=Order-${cryptoOrder.orderId.slice(0, 8)}`}
+                  size={192}
+                />
+              </div>
+            </div>
+            <div className="mt-4 space-y-2">
+              <div className="rounded-md border border-border bg-section p-3">
+                <div className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground mb-1">LTC address (Binance wallet)</div>
+                <div className="flex items-center gap-2">
+                  <code className="text-xs break-all flex-1 text-foreground">{cryptoOrder.address}</code>
+                  <button onClick={() => copy(cryptoOrder.address, "address")} className="shrink-0 h-8 w-8 rounded-md border border-border flex items-center justify-center hover:border-primary" aria-label="Copy address">
+                    {copied === "address" ? <Check className="h-3.5 w-3.5 text-success" /> : <Copy className="h-3.5 w-3.5" />}
+                  </button>
+                </div>
+              </div>
+              <div className="rounded-md border border-border bg-section p-3">
+                <div className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground mb-1">Amount</div>
+                <div className="flex items-center gap-2">
+                  <code className="text-xs flex-1 text-foreground">{cryptoOrder.ltcAmount} LTC <span className="text-muted-foreground">(≈ ${input.amount.toFixed(2)} USD)</span></code>
+                  <button onClick={() => copy(cryptoOrder.ltcAmount, "amount")} className="shrink-0 h-8 w-8 rounded-md border border-border flex items-center justify-center hover:border-primary" aria-label="Copy amount">
+                    {copied === "amount" ? <Check className="h-3.5 w-3.5 text-success" /> : <Copy className="h-3.5 w-3.5" />}
+                  </button>
+                </div>
+              </div>
+              <div className="rounded-md border border-border bg-section p-3">
+                <div className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground mb-1">Order reference</div>
+                <code className="text-xs text-foreground">{cryptoOrder.orderId}</code>
+              </div>
+            </div>
+            <div className="mt-4 flex items-start gap-2 rounded-md bg-accent p-3 text-xs text-foreground">
+              <AlertCircle className="h-4 w-4 shrink-0 mt-0.5 text-primary" />
+              <span>Send only <strong>LTC</strong> on the Litecoin network. Payment will be <strong>manually confirmed</strong> — your order activates as soon as we verify the transfer (usually within a few hours).</span>
+            </div>
+            <button
+              onClick={() => { onPaid?.(cryptoOrder.orderId); onClose(); toast.success("Order created — we'll confirm your LTC payment shortly."); }}
+              className="mt-4 w-full h-11 rounded-md bg-primary text-primary-foreground font-semibold hover:bg-primary/90"
+            >
+              I've sent the payment
+            </button>
           </div>
         ) : (
           <>
             <h3 className="text-lg font-bold text-foreground">Select payment method</h3>
             <p className="text-sm text-muted-foreground mt-0.5">{input.description} · ${input.amount.toFixed(2)}</p>
             <div className="mt-5 space-y-2">
-              <Option icon={CreditCard} title="Credit Card (Stripe)" desc="Pay with Visa, Mastercard, Amex" selected={gateway === "stripe"} onClick={() => setGateway("stripe")} />
-              <Option icon={Smartphone} title="M-Pesa / Local Card (Paystack)" desc="KES via Paystack" selected={gateway === "paystack"} onClick={() => setGateway("paystack")} />
-              <Option icon={Bitcoin} title="Crypto (Binance Pay)" desc="USDT or LTC" selected={gateway === "binance"} onClick={() => setGateway("binance")} />
-              {gateway === "binance" && (
-                <div className="ml-7 flex gap-2 pt-1">
-                  {(["USDT", "LTC"] as const).map((a) => (
-                    <button key={a} type="button" onClick={() => setCryptoAsset(a)}
-                      className={`px-3 h-8 rounded-md text-xs font-semibold border ${cryptoAsset === a ? "bg-primary text-primary-foreground border-primary" : "border-border bg-background"}`}>{a}</button>
-                  ))}
-                </div>
-              )}
+              <Option icon={CreditCard} title="Pay with Card (Stripe)" desc="Visa, Mastercard, Amex, Apple Pay" selected={gateway === "stripe"} onClick={() => setGateway("stripe")} />
+              <Option icon={Bitcoin} title="Pay with Crypto (LTC)" desc="Litecoin — sent to our Binance wallet" selected={gateway === "binance"} onClick={() => setGateway("binance")} />
             </div>
             <button onClick={pay} disabled={loading} className="mt-6 w-full h-11 rounded-md bg-primary text-primary-foreground font-semibold hover:bg-primary/90 disabled:opacity-60 inline-flex items-center justify-center gap-2">
-              {loading && <Loader2 className="h-4 w-4 animate-spin" />} Pay ${input.amount.toFixed(2)}
+              {loading && <Loader2 className="h-4 w-4 animate-spin" />} {gateway === "stripe" ? `Pay $${input.amount.toFixed(2)}` : "Continue to crypto payment"}
             </button>
-            <p className="mt-3 text-[11px] text-muted-foreground text-center">Test mode — no real charges. Funds go directly to your account on success.</p>
+            <p className="mt-3 text-[11px] text-muted-foreground text-center">Stripe is in test mode — no real card charges. Crypto payments are confirmed manually.</p>
           </>
         )}
       </div>
