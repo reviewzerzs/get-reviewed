@@ -21,6 +21,7 @@ export type Database = {
           crypto_asset: string | null
           currency: string
           customer_email: string
+          customer_reference: string | null
           gateway: string
           gateway_reference: string | null
           id: string
@@ -36,6 +37,7 @@ export type Database = {
           crypto_asset?: string | null
           currency?: string
           customer_email: string
+          customer_reference?: string | null
           gateway: string
           gateway_reference?: string | null
           id?: string
@@ -51,6 +53,7 @@ export type Database = {
           crypto_asset?: string | null
           currency?: string
           customer_email?: string
+          customer_reference?: string | null
           gateway?: string
           gateway_reference?: string | null
           id?: string
