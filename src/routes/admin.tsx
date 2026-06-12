@@ -18,6 +18,7 @@ type Order = {
   gateway: string;
   status: string;
   gateway_reference: string | null;
+  customer_reference: string | null;
   platform: string | null;
   quantity: number | null;
   crypto_asset: string | null;
@@ -75,7 +76,7 @@ function AdminPage() {
                 <th className="p-3 font-semibold">Customer</th>
                 <th className="p-3 font-semibold">Method</th>
                 <th className="p-3 font-semibold">Amount</th>
-                <th className="p-3 font-semibold">Reference</th>
+                <th className="p-3 font-semibold">Customer-submitted ref</th>
                 <th className="p-3 font-semibold">Status</th>
                 <th className="p-3 font-semibold"></th>
               </tr>
@@ -94,20 +95,27 @@ function AdminPage() {
                   <td className="p-3 text-foreground">{o.customer_email}</td>
                   <td className="p-3">{gatewayLabel(o)}</td>
                   <td className="p-3 font-semibold text-foreground">${Number(o.amount).toFixed(2)} <span className="text-xs text-muted-foreground">{o.currency}</span></td>
-                  <td className="p-3 max-w-[140px] truncate text-xs text-muted-foreground" title={o.gateway_reference || ""}>{o.gateway_reference || "—"}</td>
+                  <td className="p-3 max-w-[180px] text-xs">
+                    {o.customer_reference ? (
+                      <code className="text-foreground break-all" title={o.customer_reference}>{o.customer_reference}</code>
+                    ) : <span className="text-muted-foreground">—</span>}
+                    {o.gateway_reference && (
+                      <div className="text-[10px] text-muted-foreground mt-0.5 truncate" title={o.gateway_reference}>sys: {o.gateway_reference}</div>
+                    )}
+                  </td>
                   <td className="p-3">
-                    <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${o.status === "Paid" ? "bg-success/10 text-success" : o.status === "failed" || o.status === "cancelled" ? "bg-destructive/10 text-destructive" : "bg-accent text-primary"}`}>
+                    <span className={`text-xs font-semibold px-2.5 py-1 rounded-full whitespace-nowrap ${o.status === "Paid" ? "bg-success/10 text-success" : o.status === "failed" || o.status === "cancelled" ? "bg-destructive/10 text-destructive" : "bg-accent text-primary"}`}>
                       {o.status}
                     </span>
                   </td>
                   <td className="p-3 text-right">
-                    {o.status === "pending" && (
+                    {o.status !== "Paid" && o.status !== "failed" && o.status !== "cancelled" && (
                       <button
                         onClick={() => markPaid(o.id)}
                         disabled={confirming === o.id}
                         className="inline-flex items-center gap-1.5 h-8 px-3 rounded-md bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 disabled:opacity-60"
                       >
-                        <CheckCircle2 className="h-3.5 w-3.5" /> {confirming === o.id ? "Confirming…" : "Mark as Paid"}
+                        <CheckCircle2 className="h-3.5 w-3.5" /> {confirming === o.id ? "Approving…" : "Approve"}
                       </button>
                     )}
                   </td>
@@ -118,7 +126,7 @@ function AdminPage() {
         </div>
 
         <p className="mt-4 text-xs text-muted-foreground">
-          Card payments are marked Paid automatically by the Stripe webhook. Crypto (LTC) orders stay pending until you verify the transfer in your Binance wallet and confirm them here.
+          Customers paste their Stripe payment ID or LTC transaction hash after paying — orders move to <strong>awaiting_verification</strong>. Verify the payment in Stripe / your Binance wallet, then click <strong>Approve</strong>.
         </p>
       </section>
     </SiteLayout>
