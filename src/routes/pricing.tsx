@@ -1,6 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { Check, Sparkles } from "lucide-react";
+import { useState } from "react";
+import { CheckoutDialog } from "@/components/site/CheckoutDialog";
+import { useUser } from "@/lib/auth-store";
+import { useNavigate } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/pricing")({
   head: () => ({
@@ -40,6 +44,15 @@ const tiers = [
 ];
 
 function Page() {
+  const user = useUser();
+  const navigate = useNavigate();
+  const [checkout, setCheckout] = useState<null | { amount: number; name: string; reviews: number }>(null);
+
+  const onBuy = (t: { name: string; price: number; reviews: number }) => {
+    if (!user) { navigate({ to: "/auth" }); return; }
+    setCheckout({ amount: t.price, name: t.name, reviews: t.reviews });
+  };
+
   return (
     <SiteLayout>
       <section className="py-16 lg:py-20 bg-section border-b border-border">
@@ -74,12 +87,12 @@ function Page() {
                   </li>
                 ))}
               </ul>
-              <Link
-                to="/auth"
+              <button
+                onClick={() => onBuy(t)}
                 className={`mt-8 block w-full text-center rounded-md py-2.5 text-sm font-semibold transition-colors ${t.featured ? "bg-background text-primary hover:opacity-90" : "bg-primary text-primary-foreground hover:bg-primary-hover"}`}
               >
-                Get Started
-              </Link>
+                Buy {t.name}
+              </button>
             </div>
           ))}
         </div>
@@ -89,6 +102,19 @@ function Page() {
           <p className="text-muted-foreground">Need a custom volume or white-label deal? <Link to="/contact" className="text-primary font-semibold hover:underline">Talk to sales →</Link></p>
         </div>
       </section>
+      {checkout && (
+        <CheckoutDialog
+          open={!!checkout}
+          onClose={() => setCheckout(null)}
+          input={{
+            amount: checkout.amount,
+            email: user?.email || "guest@example.com",
+            description: `${checkout.name} plan — ${checkout.reviews} reviews`,
+            quantity: checkout.reviews,
+          }}
+          onPaid={() => setCheckout(null)}
+        />
+      )}
     </SiteLayout>
   );
 }
