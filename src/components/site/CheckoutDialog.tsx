@@ -21,6 +21,8 @@ type CryptoOrder = {
   address: string;
 };
 
+type StripeFollowup = { orderId: string };
+
 export function CheckoutDialog({
   open, onClose, input, onPaid,
 }: { open: boolean; onClose: () => void; input: CheckoutInput; onPaid?: (orderId: string) => void }) {
@@ -28,11 +30,16 @@ export function CheckoutDialog({
   const [loading, setLoading] = useState(false);
   const [ltcAddress, setLtcAddress] = useState<string>("");
   const [cryptoOrder, setCryptoOrder] = useState<CryptoOrder | null>(null);
+  const [stripeFollowup, setStripeFollowup] = useState<StripeFollowup | null>(null);
   const [copied, setCopied] = useState<"address" | "amount" | null>(null);
+  const [txRef, setTxRef] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (!open) return;
     setCryptoOrder(null);
+    setStripeFollowup(null);
+    setTxRef("");
     setCopied(null);
     supabase.from("payment_settings").select("ltc_wallet_address").eq("id", 1).maybeSingle()
       .then(({ data }) => { if (data?.ltc_wallet_address) setLtcAddress(data.ltc_wallet_address); });
@@ -78,7 +85,9 @@ export function CheckoutDialog({
           },
         });
         if (error || !data?.url) throw new Error(error?.message || data?.error || "Stripe error");
-        window.location.href = data.url;
+        // Open Stripe in a new tab so the dialog stays open for the user to paste their Stripe payment ID.
+        window.open(data.url, "_blank", "noopener,noreferrer");
+        setStripeFollowup({ orderId });
       } else {
         if (!ltcAddress) throw new Error("Crypto payments aren't configured yet. The LTC wallet address is missing — add it in Developer Settings.");
         const price = await getLtcUsdPrice();
@@ -93,6 +102,23 @@ export function CheckoutDialog({
     }
   }
 
+  async function submitProof(orderId: string, gatewayName: "stripe" | "binance") {
+    if (!txRef.trim()) {
+      toast.error(gatewayName === "stripe" ? "Paste your Stripe payment ID first." : "Paste your LTC transaction hash first.");
+      return;
+    }
+    setSubmitting(true);
+    const { error } = await supabase.from("orders").update({
+      customer_reference: txRef.trim(),
+      status: "awaiting_verification",
+    }).eq("id", orderId);
+    setSubmitting(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Submitted — we'll verify and approve your order shortly.");
+    onPaid?.(orderId);
+    onClose();
+  }
+
   function copy(text: string, which: "address" | "amount") {
     navigator.clipboard.writeText(text).then(() => {
       setCopied(which);
@@ -104,7 +130,39 @@ export function CheckoutDialog({
     <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
       <div className="bg-background rounded-xl border border-border shadow-xl max-w-md w-full p-6 relative max-h-[90vh] overflow-y-auto">
         <button onClick={onClose} className="absolute top-3 right-3 text-muted-foreground hover:text-foreground"><X className="h-5 w-5" /></button>
-        {cryptoOrder ? (
+        {stripeFollowup ? (
+          <div className="py-2">
+            <h3 className="text-lg font-bold text-foreground text-center">Confirm your Stripe payment</h3>
+            <p className="text-sm text-muted-foreground text-center mt-1">
+              We opened Stripe Checkout in a new tab. After paying, paste your <strong className="text-foreground">Stripe payment ID</strong> (starts with <code>pi_</code> or <code>cs_</code>) below.
+            </p>
+            <div className="mt-4 rounded-md border border-border bg-section p-3 text-xs">
+              <div className="font-semibold uppercase tracking-wide text-muted-foreground mb-1">Order reference</div>
+              <code className="text-foreground">{stripeFollowup.orderId}</code>
+            </div>
+            <label className="block mt-4 text-sm">
+              <span className="block font-semibold text-foreground mb-1.5">Stripe payment ID</span>
+              <input
+                type="text"
+                value={txRef}
+                onChange={(e) => setTxRef(e.target.value)}
+                placeholder="pi_3Nx... or cs_test_..."
+                className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm font-mono"
+              />
+            </label>
+            <div className="mt-4 flex items-start gap-2 rounded-md bg-accent p-3 text-xs text-foreground">
+              <AlertCircle className="h-4 w-4 shrink-0 mt-0.5 text-primary" />
+              <span>Your access will be activated as soon as we verify the payment (usually within minutes).</span>
+            </div>
+            <button
+              onClick={() => submitProof(stripeFollowup.orderId, "stripe")}
+              disabled={submitting}
+              className="mt-4 w-full h-11 rounded-md bg-primary text-primary-foreground font-semibold hover:bg-primary/90 disabled:opacity-60 inline-flex items-center justify-center gap-2"
+            >
+              {submitting && <Loader2 className="h-4 w-4 animate-spin" />} Submit for verification
+            </button>
+          </div>
+        ) : cryptoOrder ? (
           <div className="py-2">
             <h3 className="text-lg font-bold text-foreground text-center">Pay with Litecoin</h3>
             <p className="text-sm text-muted-foreground text-center mt-1">
@@ -146,11 +204,23 @@ export function CheckoutDialog({
               <AlertCircle className="h-4 w-4 shrink-0 mt-0.5 text-primary" />
               <span>Send only <strong>LTC</strong> on the Litecoin network. Payment will be <strong>manually confirmed</strong> — your order activates as soon as we verify the transfer (usually within a few hours).</span>
             </div>
+            <label className="block mt-4 text-sm">
+              <span className="block font-semibold text-foreground mb-1.5">LTC transaction hash (TxID)</span>
+              <input
+                type="text"
+                value={txRef}
+                onChange={(e) => setTxRef(e.target.value)}
+                placeholder="e.g. 6f1a4b...c92e"
+                className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm font-mono"
+              />
+              <span className="block mt-1 text-[11px] text-muted-foreground">Find this in your wallet's transaction history after sending.</span>
+            </label>
             <button
-              onClick={() => { onPaid?.(cryptoOrder.orderId); onClose(); toast.success("Order created — we'll confirm your LTC payment shortly."); }}
-              className="mt-4 w-full h-11 rounded-md bg-primary text-primary-foreground font-semibold hover:bg-primary/90"
+              onClick={() => submitProof(cryptoOrder.orderId, "binance")}
+              disabled={submitting}
+              className="mt-4 w-full h-11 rounded-md bg-primary text-primary-foreground font-semibold hover:bg-primary/90 disabled:opacity-60 inline-flex items-center justify-center gap-2"
             >
-              I've sent the payment
+              {submitting && <Loader2 className="h-4 w-4 animate-spin" />} I've sent the payment — submit TxID
             </button>
           </div>
         ) : (
