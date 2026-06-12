@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { useUser, setUser } from "@/lib/auth-store";
 import { ShoppingBag, PenLine, Star, DollarSign, CheckCircle2, Clock, Plus, LogOut, TrendingUp } from "lucide-react";
+import { Upload, ExternalLink } from "lucide-react";
 import { CheckoutDialog } from "@/components/site/CheckoutDialog";
 
 export const Route = createFileRoute("/dashboard")({
