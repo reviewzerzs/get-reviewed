@@ -163,9 +163,40 @@ function ReviewerView() {
     { id: "J-303", platform: "Yelp", business: "Sunrise Yoga Studio", payout: 10, words: "100+" },
     { id: "J-304", platform: "Facebook", business: "Loop Coffee Roasters", payout: 7, words: "80+" },
   ]);
-  const [claimed, setClaimed] = useState<string[]>([]);
+  type JobState = "open" | "claimed" | "in_progress" | "submitted";
+  const [states, setStates] = useState<Record<string, JobState>>({});
+  const [submissions, setSubmissions] = useState<Record<string, { screenshot: string; note: string }>>({});
+  const [activeJob, setActiveJob] = useState<string | null>(null);
+  const [screenshot, setScreenshot] = useState<string>("");
+  const [note, setNote] = useState<string>("");
 
-  const claim = (id: string) => setClaimed((c) => c.includes(id) ? c : [...c, id]);
+  const setState = (id: string, s: JobState) => setStates((m) => ({ ...m, [id]: s }));
+  const claim = (id: string) => setState(id, "claimed");
+  const startJob = (id: string, platform: string, business: string) => {
+    setState(id, "in_progress");
+    const url = `https://www.google.com/search?q=${encodeURIComponent(`${business} ${platform} review`)}`;
+    if (typeof window !== "undefined") window.open(url, "_blank");
+  };
+  const openSubmit = (id: string) => {
+    setActiveJob(id);
+    setScreenshot(submissions[id]?.screenshot || "");
+    setNote(submissions[id]?.note || "");
+  };
+  const onFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    const r = new FileReader();
+    r.onload = () => setScreenshot(String(r.result));
+    r.readAsDataURL(f);
+  };
+  const submitProof = () => {
+    if (!activeJob || !screenshot) return;
+    setSubmissions((m) => ({ ...m, [activeJob]: { screenshot, note } }));
+    setState(activeJob, "submitted");
+    setActiveJob(null);
+    setScreenshot("");
+    setNote("");
+  };
 
   return (
     <div className="space-y-8">
@@ -182,30 +213,78 @@ function ReviewerView() {
           <p className="text-sm text-muted-foreground mt-0.5">Claim a job, submit your review, and get paid directly to your account.</p>
         </div>
         <div className="divide-y divide-border">
-          {jobs.map((j) => (
-            <div key={j.id} className="flex flex-wrap items-center justify-between gap-3 p-5">
-              <div>
-                <div className="font-semibold text-foreground text-sm">{j.business}</div>
-                <div className="text-xs text-muted-foreground mt-0.5">{j.platform} · {j.words} words · {j.id}</div>
+          {jobs.map((j) => {
+            const st = states[j.id] || "open";
+            return (
+              <div key={j.id} className="flex flex-wrap items-center justify-between gap-3 p-5">
+                <div>
+                  <div className="font-semibold text-foreground text-sm">{j.business}</div>
+                  <div className="text-xs text-muted-foreground mt-0.5">{j.platform} · {j.words} words · {j.id}</div>
+                  {submissions[j.id]?.screenshot && (
+                    <img src={submissions[j.id].screenshot} alt="proof" className="mt-2 h-16 rounded border border-border" />
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="font-bold text-primary">${j.payout}</span>
+                  {st === "open" && (
+                    <button onClick={() => claim(j.id)} className="h-9 rounded-md bg-primary text-primary-foreground px-3 text-sm font-semibold hover:bg-primary-hover">
+                      Claim job
+                    </button>
+                  )}
+                  {st === "claimed" && (
+                    <button onClick={() => startJob(j.id, j.platform, j.business)} className="h-9 inline-flex items-center gap-1.5 rounded-md bg-primary text-primary-foreground px-3 text-sm font-semibold hover:bg-primary-hover">
+                      <ExternalLink className="h-3.5 w-3.5" /> Do job
+                    </button>
+                  )}
+                  {st === "in_progress" && (
+                    <>
+                      <button onClick={() => startJob(j.id, j.platform, j.business)} className="h-9 rounded-md border border-border bg-background px-3 text-sm font-semibold hover:border-primary">
+                        Reopen
+                      </button>
+                      <button onClick={() => openSubmit(j.id)} className="h-9 inline-flex items-center gap-1.5 rounded-md bg-primary text-primary-foreground px-3 text-sm font-semibold hover:bg-primary-hover">
+                        <Upload className="h-3.5 w-3.5" /> Submit proof
+                      </button>
+                    </>
+                  )}
+                  {st === "submitted" && (
+                    <span className="text-xs font-semibold text-success inline-flex items-center gap-1">
+                      <CheckCircle2 className="h-3.5 w-3.5" /> Submitted · awaiting review
+                    </span>
+                  )}
+                </div>
               </div>
-              <div className="flex items-center gap-3">
-                <span className="font-bold text-primary">${j.payout}</span>
-                {claimed.includes(j.id) ? (
-                  <span className="text-xs font-semibold text-success inline-flex items-center gap-1"><CheckCircle2 className="h-3.5 w-3.5" /> Claimed</span>
-                ) : (
-                  <button onClick={() => claim(j.id)} className="h-9 rounded-md bg-primary text-primary-foreground px-3 text-sm font-semibold hover:bg-primary-hover">
-                    Claim job
-                  </button>
-                )}
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
       <p className="text-center text-xs text-muted-foreground">
         Need help getting started? Read the <Link to="/how-it-works" className="text-primary font-semibold">reviewer guide</Link>.
       </p>
+
+      {activeJob && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4" onClick={() => setActiveJob(null)}>
+          <div className="w-full max-w-md rounded-xl bg-background border border-border p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
+            <div>
+              <h3 className="font-semibold text-foreground">Submit review proof</h3>
+              <p className="text-xs text-muted-foreground mt-1">Upload a screenshot of your published review for job {activeJob}.</p>
+            </div>
+            <label className="block text-sm">
+              <span className="block font-semibold mb-1.5 text-foreground">Screenshot</span>
+              <input type="file" accept="image/*" onChange={onFile} className="block w-full text-sm" />
+            </label>
+            {screenshot && <img src={screenshot} alt="preview" className="max-h-48 rounded border border-border" />}
+            <label className="block text-sm">
+              <span className="block font-semibold mb-1.5 text-foreground">Notes (optional)</span>
+              <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={3} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" placeholder="Review URL or any context for the company…" />
+            </label>
+            <div className="flex justify-end gap-2">
+              <button onClick={() => setActiveJob(null)} className="h-9 rounded-md border border-border bg-background px-3 text-sm font-semibold hover:border-primary">Cancel</button>
+              <button onClick={submitProof} disabled={!screenshot} className="h-9 rounded-md bg-primary text-primary-foreground px-3 text-sm font-semibold hover:bg-primary-hover disabled:opacity-50">Submit</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
