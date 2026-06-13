@@ -71,10 +71,7 @@ function StatCard({ icon: Icon, label, value }: { icon: any; label: string; valu
 }
 
 function CompanyView() {
-  const [orders, setOrders] = useState<Array<{ id: string; platform: string; qty: number; status: string }>>([
-    { id: "ORD-1042", platform: "Google", qty: 10, status: "In Progress" },
-    { id: "ORD-1039", platform: "Trustpilot", qty: 5, status: "Completed" },
-  ]);
+  const [orders, setOrders] = useState<Array<{ id: string; platform: string; qty: number; status: string }>>([]);
   const [showForm, setShowForm] = useState(false);
   const [platform, setPlatform] = useState("Google");
   const [qty, setQty] = useState(5);
@@ -91,9 +88,9 @@ function CompanyView() {
     <div className="space-y-8">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard icon={ShoppingBag} label="Active orders" value={String(orders.filter(o => o.status !== "Completed").length)} />
-        <StatCard icon={CheckCircle2} label="Approved reviews" value="23" />
-        <StatCard icon={Star} label="Average rating" value="4.8" />
-        <StatCard icon={DollarSign} label="Account balance" value="$420" />
+        <StatCard icon={CheckCircle2} label="Approved reviews" value={String(orders.filter(o => o.status === "Completed").reduce((s, o) => s + o.qty, 0))} />
+        <StatCard icon={Star} label="Average rating" value={orders.length ? "5.0" : "—"} />
+        <StatCard icon={DollarSign} label="Account balance" value={`$${orders.reduce((s, o) => s + o.qty * 8, 0)}`} />
       </div>
 
       <div className="rounded-xl border border-border bg-background">
@@ -170,8 +167,42 @@ function ReviewerView() {
   const [screenshot, setScreenshot] = useState<string>("");
   const [note, setNote] = useState<string>("");
 
+  const user = useUser();
+  const payoutKey = `rm_payout_${user?.email || "anon"}`;
+  const [paypal, setPaypal] = useState("");
+  const [payoneer, setPayoneer] = useState("");
+  const [savedPayout, setSavedPayout] = useState(false);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const raw = localStorage.getItem(payoutKey);
+      if (raw) {
+        const p = JSON.parse(raw);
+        setPaypal(p.paypal || "");
+        setPayoneer(p.payoneer || "");
+        setSavedPayout(!!(p.paypal || p.payoneer));
+      }
+    } catch {}
+  }, [payoutKey]);
+  const savePayout = (e: React.FormEvent) => {
+    e.preventDefault();
+    localStorage.setItem(payoutKey, JSON.stringify({ paypal, payoneer }));
+    setSavedPayout(true);
+  };
+
+  const submittedJobs = jobs.filter((j) => states[j.id] === "submitted");
+  const completedCount = submittedJobs.length;
+  const pendingPayout = submittedJobs.reduce((s, j) => s + j.payout, 0);
+  const totalEarned = pendingPayout; // becomes "paid" after company approves; placeholder same value
+
   const setState = (id: string, s: JobState) => setStates((m) => ({ ...m, [id]: s }));
-  const claim = (id: string) => setState(id, "claimed");
+  const claim = (id: string) => {
+    if (!savedPayout) {
+      alert("Please add your PayPal or Payoneer email first so we can pay you.");
+      return;
+    }
+    setState(id, "claimed");
+  };
   const startJob = (id: string, platform: string, business: string) => {
     setState(id, "in_progress");
     const url = `https://www.google.com/search?q=${encodeURIComponent(`${business} ${platform} review`)}`;
@@ -201,11 +232,32 @@ function ReviewerView() {
   return (
     <div className="space-y-8">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard icon={DollarSign} label="Total earned" value="$246" />
-        <StatCard icon={Clock} label="Pending payout" value="$32" />
-        <StatCard icon={CheckCircle2} label="Completed jobs" value="18" />
-        <StatCard icon={TrendingUp} label="Reviewer rating" value="4.9" />
+        <StatCard icon={DollarSign} label="Total earned" value={`$${totalEarned}`} />
+        <StatCard icon={Clock} label="Pending payout" value={`$${pendingPayout}`} />
+        <StatCard icon={CheckCircle2} label="Completed jobs" value={String(completedCount)} />
+        <StatCard icon={TrendingUp} label="Reviewer rating" value={completedCount ? "5.0" : "—"} />
       </div>
+
+      <form onSubmit={savePayout} className="rounded-xl border border-border bg-background p-5 space-y-4">
+        <div>
+          <h2 className="font-semibold text-foreground">Payout details</h2>
+          <p className="text-sm text-muted-foreground mt-0.5">Add at least one payout email. You'll be paid here after each approved job.</p>
+        </div>
+        <div className="grid sm:grid-cols-2 gap-3">
+          <label className="block text-sm">
+            <span className="block font-semibold mb-1.5 text-foreground">PayPal email</span>
+            <input type="email" value={paypal} onChange={(e) => setPaypal(e.target.value)} placeholder="you@paypal.com" className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm" />
+          </label>
+          <label className="block text-sm">
+            <span className="block font-semibold mb-1.5 text-foreground">Payoneer email</span>
+            <input type="email" value={payoneer} onChange={(e) => setPayoneer(e.target.value)} placeholder="you@payoneer.com" className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm" />
+          </label>
+        </div>
+        <div className="flex items-center gap-3">
+          <button type="submit" disabled={!paypal && !payoneer} className="h-10 rounded-md bg-primary text-primary-foreground px-4 text-sm font-semibold hover:bg-primary-hover disabled:opacity-50">Save payout details</button>
+          {savedPayout && <span className="text-xs text-success font-semibold inline-flex items-center gap-1"><CheckCircle2 className="h-3.5 w-3.5" /> Saved</span>}
+        </div>
+      </form>
 
       <div className="rounded-xl border border-border bg-background">
         <div className="p-5 border-b border-border">
