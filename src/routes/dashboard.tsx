@@ -71,10 +71,7 @@ function StatCard({ icon: Icon, label, value }: { icon: any; label: string; valu
 }
 
 function CompanyView() {
-  const [orders, setOrders] = useState<Array<{ id: string; platform: string; qty: number; status: string }>>([
-    { id: "ORD-1042", platform: "Google", qty: 10, status: "In Progress" },
-    { id: "ORD-1039", platform: "Trustpilot", qty: 5, status: "Completed" },
-  ]);
+  const [orders, setOrders] = useState<Array<{ id: string; platform: string; qty: number; status: string }>>([]);
   const [showForm, setShowForm] = useState(false);
   const [platform, setPlatform] = useState("Google");
   const [qty, setQty] = useState(5);
@@ -91,9 +88,9 @@ function CompanyView() {
     <div className="space-y-8">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard icon={ShoppingBag} label="Active orders" value={String(orders.filter(o => o.status !== "Completed").length)} />
-        <StatCard icon={CheckCircle2} label="Approved reviews" value="23" />
-        <StatCard icon={Star} label="Average rating" value="4.8" />
-        <StatCard icon={DollarSign} label="Account balance" value="$420" />
+        <StatCard icon={CheckCircle2} label="Approved reviews" value={String(orders.filter(o => o.status === "Completed").reduce((s, o) => s + o.qty, 0))} />
+        <StatCard icon={Star} label="Average rating" value={orders.length ? "5.0" : "—"} />
+        <StatCard icon={DollarSign} label="Account balance" value={`$${orders.reduce((s, o) => s + o.qty * 8, 0)}`} />
       </div>
 
       <div className="rounded-xl border border-border bg-background">
