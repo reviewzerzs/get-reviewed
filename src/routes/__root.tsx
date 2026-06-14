@@ -80,6 +80,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { title: "Lovable App" },
       { name: "description", content: "Get Reviewed is a two-sided marketplace for buying and selling online reviews." },
       { name: "author", content: "Lovable" },
+      { name: "google-site-verification", content: "DAS50TaYfMfq8Dxb_GMK0tKt1J7UvZfeyzm4MWB23Q4" },
       { property: "og:title", content: "Lovable App" },
       { property: "og:description", content: "Get Reviewed is a two-sided marketplace for buying and selling online reviews." },
       { property: "og:type", content: "website" },
