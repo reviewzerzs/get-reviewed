@@ -4,7 +4,7 @@ import { SiteLayout } from "@/components/site/SiteLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Save, KeyRound } from "lucide-react";
-import { savePaymentSettings } from "@/lib/payment-settings.functions";
+import { savePaymentSettings, claimFirstAdmin } from "@/lib/payment-settings.functions";
 
 export const Route = createFileRoute("/settings")({
   head: () => ({ meta: [{ title: "Developer Settings — Payment Keys" }] }),
@@ -57,6 +57,16 @@ function SettingsPage() {
         </section>
       </SiteLayout>
     );
+  }
+
+  async function claimAdmin() {
+    try {
+      const res = await claimFirstAdmin();
+      if (res.ok) toast.success(res.message);
+      else toast.info(res.message);
+    } catch (e: any) {
+      toast.error(e?.message || "Failed");
+    }
   }
 
   return (
