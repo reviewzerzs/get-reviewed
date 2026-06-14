@@ -1,9 +1,10 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState, useCallback } from "react";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { RefreshCw, CheckCircle2, ShieldCheck } from "lucide-react";
+import { listOrdersAdmin, approveOrderAdmin } from "@/lib/orders.functions";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({ meta: [{ title: "Admin — Orders & Payments" }] }),
@@ -29,28 +30,57 @@ function AdminPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [confirming, setConfirming] = useState<string | null>(null);
+  const [authed, setAuthed] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => setAuthed(!!data.session));
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => setAuthed(!!session));
+    return () => sub.subscription.unsubscribe();
+  }, []);
 
   const load = useCallback(async () => {
+    if (!authed) { setLoading(false); return; }
     setLoading(true);
-    const { data, error } = await supabase.from("orders").select("*").order("created_at", { ascending: false }).limit(100);
-    if (error) toast.error(error.message);
-    setOrders((data as Order[]) || []);
-    setLoading(false);
-  }, []);
+    try {
+      const res = await listOrdersAdmin();
+      setOrders((res.orders as Order[]) || []);
+    } catch (e: any) {
+      toast.error(e?.message || "Failed to load orders");
+    } finally {
+      setLoading(false);
+    }
+  }, [authed]);
 
   useEffect(() => { load(); }, [load]);
 
   async function markPaid(id: string) {
     setConfirming(id);
-    const { error } = await supabase.from("orders").update({ status: "Paid", gateway_reference: `manual-confirm-${Date.now()}` }).eq("id", id);
+    try {
+      await approveOrderAdmin({ data: { orderId: id } });
+    } catch (e: any) {
+      setConfirming(null);
+      toast.error(e?.message || "Failed to approve");
+      return;
+    }
     setConfirming(null);
-    if (error) { toast.error(error.message); return; }
     toast.success("Payment confirmed — order marked as Paid");
     load();
   }
 
   const gatewayLabel = (o: Order) =>
     o.gateway === "stripe" ? "Card (Stripe)" : o.gateway === "binance" ? `Crypto (${o.crypto_asset || "LTC"})` : o.gateway;
+
+  if (authed === false) {
+    return (
+      <SiteLayout>
+        <section className="mx-auto max-w-md px-4 py-16 text-center">
+          <h1 className="text-2xl font-bold mb-2">Admin sign-in required</h1>
+          <p className="text-sm text-muted-foreground mb-6">You must be signed in with an admin account to view orders.</p>
+          <Link to="/auth" className="inline-flex h-10 items-center px-5 rounded-md bg-primary text-primary-foreground font-semibold">Sign in</Link>
+        </section>
+      </SiteLayout>
+    );
+  }
 
   return (
     <SiteLayout>
