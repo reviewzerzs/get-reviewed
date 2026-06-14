@@ -95,6 +95,17 @@ function SettingsPage() {
             <li><code className="text-foreground">STRIPE_SECRET_KEY</code> — sk_test_… for the Stripe Checkout edge function</li>
           </ul>
         </div>
+
+        <div className="mt-6 rounded-lg border border-border bg-section p-5 text-sm">
+          <h2 className="font-semibold text-foreground mb-2">First-time admin setup</h2>
+          <p className="text-xs text-muted-foreground mb-3">
+            If no admin exists yet, click below to claim the admin role for your currently signed-in account.
+            Once an admin exists this button does nothing.
+          </p>
+          <button type="button" onClick={claimAdmin} className="inline-flex h-9 px-4 rounded-md border border-border text-xs font-semibold hover:border-primary">
+            Claim admin role
+          </button>
+        </div>
       </section>
     </SiteLayout>
   );
