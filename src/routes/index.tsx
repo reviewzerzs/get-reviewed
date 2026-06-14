@@ -6,10 +6,10 @@ import { Star, CheckCircle2, ShoppingBag, PenLine, ShieldCheck, Zap, Globe, User
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "ReviewMarket — Buy Reviews & Get Paid to Write Reviews" },
-      { name: "description", content: "The trusted marketplace where businesses buy authentic reviews and reviewers earn money writing them. Google, Yelp, Facebook & more." },
-      { property: "og:title", content: "ReviewMarket — The Trusted Review Marketplace" },
-      { property: "og:description", content: "Buy real reviews for your business or get paid to write reviews. Join thousands worldwide." },
+      { title: "Get Reviewed | Boost Your Business Reputation & Customer Trust" },
+      { name: "description", content: "Get Reviewed helps businesses easily collect customer feedback, manage their online reputation, and display trust badges to build credibility." },
+      { property: "og:title", content: "Get Reviewed | Boost Your Business Reputation & Customer Trust" },
+      { property: "og:description", content: "Get Reviewed helps businesses easily collect customer feedback, manage their online reputation, and display trust badges to build credibility." },
     ],
   }),
   component: Index,
