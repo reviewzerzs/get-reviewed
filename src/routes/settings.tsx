@@ -1,9 +1,10 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Save, KeyRound } from "lucide-react";
+import { savePaymentSettings } from "@/lib/payment-settings.functions";
 
 export const Route = createFileRoute("/settings")({
   head: () => ({ meta: [{ title: "Developer Settings — Payment Keys" }] }),
@@ -15,6 +16,13 @@ function SettingsPage() {
   const [ltcAddress, setLtcAddress] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [authed, setAuthed] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => setAuthed(!!data.session));
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => setAuthed(!!session));
+    return () => sub.subscription.unsubscribe();
+  }, []);
 
   useEffect(() => {
     supabase.from("payment_settings").select("*").eq("id", 1).maybeSingle().then(({ data }) => {
@@ -29,11 +37,26 @@ function SettingsPage() {
   async function save(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
-    const { error } = await supabase.from("payment_settings").upsert({
-      id: 1, stripe_public_key: stripe, ltc_wallet_address: ltcAddress,
-    });
-    setSaving(false);
-    if (error) toast.error(error.message); else toast.success("Settings saved");
+    try {
+      await savePaymentSettings({ data: { stripe_public_key: stripe, ltc_wallet_address: ltcAddress } });
+      toast.success("Settings saved");
+    } catch (e: any) {
+      toast.error(e?.message || "Failed to save");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (authed === false) {
+    return (
+      <SiteLayout>
+        <section className="mx-auto max-w-md px-4 py-16 text-center">
+          <h1 className="text-2xl font-bold mb-2">Admin sign-in required</h1>
+          <p className="text-sm text-muted-foreground mb-6">You must be signed in with an admin account to change payment settings.</p>
+          <Link to="/auth" className="inline-flex h-10 items-center px-5 rounded-md bg-primary text-primary-foreground font-semibold">Sign in</Link>
+        </section>
+      </SiteLayout>
+    );
   }
 
   return (
