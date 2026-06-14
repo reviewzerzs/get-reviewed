@@ -3,6 +3,7 @@ import { CreditCard, Bitcoin, Loader2, X, Copy, Check, AlertCircle } from "lucid
 import { QRCodeSVG } from "qrcode.react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { createOrder as createOrderFn, submitOrderProof } from "@/lib/orders.functions";
 
 type Gateway = "stripe" | "binance";
 
@@ -48,18 +49,19 @@ export function CheckoutDialog({
   if (!open) return null;
 
   async function createOrder(g: Gateway, currency: string) {
-    const { data, error } = await supabase.from("orders").insert({
-      customer_email: input.email,
-      amount: input.amount,
-      currency,
-      gateway: g,
-      platform: input.platform ?? null,
-      quantity: input.quantity ?? null,
-      crypto_asset: g === "binance" ? "LTC" : null,
-      metadata: { description: input.description },
-    }).select("id").single();
-    if (error || !data) throw new Error(error?.message || "Failed to create order");
-    return data.id as string;
+    const result = await createOrderFn({
+      data: {
+        customer_email: input.email,
+        amount: input.amount,
+        currency,
+        gateway: g,
+        platform: input.platform ?? null,
+        quantity: input.quantity ?? null,
+        crypto_asset: g === "binance" ? "LTC" : null,
+        description: input.description,
+      },
+    });
+    return result.id;
   }
 
   async function getLtcUsdPrice(): Promise<number> {
@@ -108,12 +110,14 @@ export function CheckoutDialog({
       return;
     }
     setSubmitting(true);
-    const { error } = await supabase.from("orders").update({
-      customer_reference: txRef.trim(),
-      status: "awaiting_verification",
-    }).eq("id", orderId);
+    try {
+      await submitOrderProof({ data: { orderId, customerReference: txRef.trim() } });
+    } catch (e: any) {
+      setSubmitting(false);
+      toast.error(e?.message || "Failed to submit");
+      return;
+    }
     setSubmitting(false);
-    if (error) { toast.error(error.message); return; }
     toast.success("Submitted — we'll verify and approve your order shortly.");
     onPaid?.(orderId);
     onClose();
